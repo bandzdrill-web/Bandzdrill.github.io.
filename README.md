@@ -1,1 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JARVIS Portal</title>
+    <style>
+        body {
+            background-color: #0d1117;
+            color: #58a6ff;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .jarvis-core {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: 4px dashed #58a6ff;
+            box-shadow: 0 0 20px #58a6ff;
+            animation: spin 6s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .container { text-align: center; width: 90%; max-width: 400px; }
+        input {
+            width: 100%;
+            padding: 10px;
+            background: #161b22;
+            border: 1px solid #30363d;
+            color: white;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #238636;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+        }
+        #output { margin-top: 20px; font-weight: bold; min-height: 40px; }
+    </style>
+</head>
+<body>
+
+    <div class="jarvis-core"></div>
+    <div class="container">
+        <h1>JARVIS ONLINE</h1>
+        
+        <!-- API KEY INPUT (Keeps it private/saved in browser) -->
+        <input type="password" id="apiKey" placeholder="Paste Gemini API Key Here...">
+        
+        <!-- USER PROMPT -->
+        <input type="text" id="userInput" placeholder="Ask JARVIS something...">
+        
+        <button onclick="askJarvis()">Initialize Response</button>
+        
+        <div id="output">Awaiting instructions...</div>
+    </div>
+
+    <script>
+        async function askJarvis() {
+            const apiKey = document.getElementById('apiKey').value;
+            const userInput = document.getElementById('userInput').value;
+            const outputDiv = document.getElementById('output');
+
+            if (!apiKey) {
+                outputDiv.innerText = "Error: Please provide a Gemini API Key.";
+                speak("Please provide an API Key, Sir.");
+                return;
+            }
+            if (!userInput) return;
+
+            outputDiv.innerText = "Processing analysis...";
+            speak("Processing, Sir.");
+
+            try {
+                // Connecting to free Google Gemini API
+                const url = `https://googleapis.com{apiKey}`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: userInput + " (Answer concisely like JARVIS from Iron Man)" }] }]
+                    })
+                });
+
+                const data = await response.json();
+                const reply = data.candidates[0].content.parts[0].text;
+                
+                // Display text
+                outputDiv.innerText = reply;
+                
+                // Trigger Voice Feature
+                speak(reply);
+
+            } catch (error) {
+                outputDiv.innerText = "Error communicating with neural network.";
+                speak("An error occurred during system calculation.");
+            }
+        }
+
+        // Voice Engine Function
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // Stop talking if already speaking
+                const utterance = new SpeechSynthesisUtterance(text);
+                
+                // Tries to pick a professional male voice if available, otherwise defaults
+                const voices = window.speechSynthesis.getVoices();
+                const britishVoice = voices.find(v => v.lang.includes('en-GB') || v.name.includes('Google UK English Male'));
+                if (britishVoice) utterance.voice = britishVoice;
+                
+                utterance.rate = 1.0; 
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+        
+        // Pre-load voices for mobile browsers
+        if ('speechSynthesis' in window) { window.speechSynthesis.getVoices(); }
+    </script>
+</body>
+</html>
 # Bandzdrill.github.io.
